@@ -84,8 +84,8 @@ for action in actions:
     action = Actions(
         name = action[0],
         straight_knife_diameter = action[1],
-        width = action[2],
-        thickness = action[3],
+        total_width = action[2],
+        total_thickness = action[3],
         tenon_width = action[4],
         tenon_thickness = action[5],
         tenon_length = action[6],

@@ -313,6 +313,7 @@ class Equipments(db.Model, PaginatedAPIMixin, Serializer):
     users = db.relationship(
         'Users', secondary=users_equipments, backref=db.backref('equipments'))
     jobs = db.relationship('Jobs', backref='equipment', lazy='dynamic')
+    actions = db.relationship('Actions', backref='equipment', lazy='dynamic')
     poweronoffs = db.relationship('Poweronoffs', backref='equipment', lazy='dynamic')
 
     @classmethod
@@ -504,8 +505,9 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
     name = db.Column(db.String(50))
 
     straight_knife_diameter = db.Column(db.Integer(), default=0)
-    width = db.Column(db.Integer(), default=0)
-    thickness = db.Column(db.Integer(), default=0)
+    total_width = db.Column(db.Integer(), default=0)
+    total_thickness = db.Column(db.Integer(), default=0)
+    total_length = db.Column(db.Integer(), default=200)
     tenon_width = db.Column(db.Integer(), default=0)
     tenon_thickness = db.Column(db.Integer(), default=0)
     tenon_length = db.Column(db.Integer(), default=0)
@@ -518,6 +520,7 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    equipment_id = db.Column(db.Integer, db.ForeignKey('equipments.id'))
 
     jobs = db.relationship('Jobs', backref='action', lazy='dynamic')
     
@@ -558,8 +561,9 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
             'id': self.id,
             'name': self.name,
             'straight_knife_diameter': self.straight_knife_diameter,
-            'width': self.width,
-            'thickness': self.thickness,
+            'total_width': self.total_width,
+            'total_thickness': self.total_thickness,
+            'total_length': self.total_length,
             'tenon_width': self.tenon_width,
             'tenon_thickness': self.tenon_thickness,
             'tenon_length': self.tenon_length,
@@ -571,6 +575,10 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
             'create_at': self.create_at.isoformat() + 'Z',
             'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
             'user_id': self.user_id,
+            'equipment_id': self.equipment_id,
+            'equipment': self.equipment.name,
+            'equipment_code': self.equipment.equipment_code,
+            'gcodefile': self.last_update.strftime("%Y%m%d_%H%M%S") + '.nc' if self.last_update else self.create_at.strftime("%Y%m%d_%H%M%S") + '.nc' 
         }
         return data
 
@@ -578,8 +586,8 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
         for field in [
             'name',
             'straight_knife_diameter',
-            'width',
-            'thickness',
+            'total_width',
+            'total_thickness',
             'tenon_width',
             'tenon_thickness',
             'tenon_length',
@@ -588,6 +596,7 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
             'cottom_distance',
             'cutting_depth_perlayer',
             'lightness',
+            'equipment_id'
         ]:
             if field in data:
                 setattr(self, field, data[field])
