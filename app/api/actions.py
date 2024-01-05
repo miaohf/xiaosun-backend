@@ -10,19 +10,29 @@ import uuid
 
 @bp.route('/actions', methods=['POST'])
 @token_auth.login_required
-def create_action():
+def create_or_update_action():
     '''创建一个作业指令'''
     data = request.get_json()
-    print(data)
+    print('create_or_update_action: ', data)
+    if not data['equipment_id']:
+        data['equipment_id'] = 1
 
-    data['name'] = data['name'] + '-' + str(uuid.uuid4())[:8]
-    action = Actions()  
-    action.from_dict(data)
-    action.user_id = g.current_user.id
-    db.session.add(action)
+    if not data['id']:
+        print('create a action')
+        # data['name'] = data['name'] + '-' + str(uuid.uuid4())[:8]
+        action = Actions()  
+        action.from_dict(data)
+        action.user_id = g.current_user.id
+        db.session.add(action)
+    else:
+        print('update a action')
+        action = Actions.query.get(data['id'])
+        action.from_dict(data)
     db.session.commit()
     
-    return jsonify({'result': 'ok'})
+    print('action.to_dict(): ', action.to_dict())
+    
+    return jsonify({'data': action.to_dict()})
 
 
 @bp.route('/actions', methods=['GET'])

@@ -508,12 +508,30 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
     total_width = db.Column(db.Integer(), default=0)
     total_thickness = db.Column(db.Integer(), default=0)
     total_length = db.Column(db.Integer(), default=200)
-    tenon_width = db.Column(db.Integer(), default=0)
-    tenon_thickness = db.Column(db.Integer(), default=0)
-    tenon_length = db.Column(db.Integer(), default=0)
+    is_double_row = db.Column(db.String(1), default='0')
+
+    tenon_a_width = db.Column(db.Integer(), default=0)
+    tenon_a_thickness = db.Column(db.Integer(), default=0)
+    tenon_a_length = db.Column(db.Integer(), default=0)
+
+    tenon_b_width = db.Column(db.Integer(), default=0)
+    tenon_b_thickness = db.Column(db.Integer(), default=0)
+    tenon_b_length = db.Column(db.Integer(), default=0)
+    tenon_b_interval = db.Column(db.Integer(), default=0)
+
+    tenon_c_width = db.Column(db.Integer(), default=0)
+    tenon_c_thickness = db.Column(db.Integer(), default=0)
+    tenon_c_length = db.Column(db.Integer(), default=0)
+    tenon_c_interval = db.Column(db.Integer(), default=0)
+
+    tenon_d_width = db.Column(db.Integer(), default=0)
+    tenon_d_thickness = db.Column(db.Integer(), default=0)
+    tenon_d_length = db.Column(db.Integer(), default=0)
+    tenon_d_interval = db.Column(db.Integer(), default=0)
+
     corner_radius = db.Column(db.Integer(), default=0)
     left_distance = db.Column(db.Integer(), default=0)
-    cottom_distance = db.Column(db.Integer(), default=0)
+    bottom_distance = db.Column(db.Integer(), default=0)
     cutting_depth_perlayer = db.Column(db.Integer(), default=0)
     lightness = db.Column(db.Integer(), default=0)
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
@@ -564,20 +582,39 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
             'total_width': self.total_width,
             'total_thickness': self.total_thickness,
             'total_length': self.total_length,
-            'tenon_width': self.tenon_width,
-            'tenon_thickness': self.tenon_thickness,
-            'tenon_length': self.tenon_length,
+            'is_double_row': self.is_double_row,
+
+            'tenon_a_width': self.tenon_a_width,
+            'tenon_a_thickness': self.tenon_a_thickness,
+            'tenon_a_length': self.tenon_a_length,
+
+            'tenon_b_width': self.tenon_b_width,
+            'tenon_b_thickness': self.tenon_b_thickness,
+            'tenon_b_length': self.tenon_b_length,
+            'tenon_b_interval': self.tenon_b_interval,
+
+            'tenon_c_width': self.tenon_c_width,
+            'tenon_c_thickness': self.tenon_c_thickness,
+            'tenon_c_length': self.tenon_c_length,
+            'tenon_c_interval': self.tenon_c_interval,
+
+            'tenon_d_width': self.tenon_d_width,
+            'tenon_d_thickness': self.tenon_d_thickness,
+            'tenon_d_length': self.tenon_d_length,
+            'tenon_d_interval': self.tenon_d_interval,
+
             'corner_radius': self.corner_radius,
             'left_distance': self.left_distance,
-            'cottom_distance': self.cottom_distance,
+            'bottom_distance': self.bottom_distance,
             'cutting_depth_perlayer': self.cutting_depth_perlayer,
             'lightness': self.lightness,
+            
             'create_at': self.create_at.isoformat() + 'Z',
             'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
             'user_id': self.user_id,
             'equipment_id': self.equipment_id,
-            'equipment': self.equipment.name,
-            'equipment_code': self.equipment.equipment_code,
+            'equipment': self.equipment.name if self.equipment_id else None,
+            'equipment_code': self.equipment.equipment_code if self.equipment_id else None,
             'gcodefile': self.last_update.strftime("%Y%m%d_%H%M%S") + '.nc' if self.last_update else self.create_at.strftime("%Y%m%d_%H%M%S") + '.nc' 
         }
         return data
@@ -588,12 +625,31 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
             'straight_knife_diameter',
             'total_width',
             'total_thickness',
-            'tenon_width',
-            'tenon_thickness',
-            'tenon_length',
+            'total_length',
+            'is_double_row',
+
+            'tenon_a_width',
+            'tenon_a_thickness',
+            'tenon_a_length',
+
+            'tenon_b_width',
+            'tenon_b_thickness',
+            'tenon_b_length',
+            'tenon_b_interval',
+
+            'tenon_c_width',
+            'tenon_c_thickness',
+            'tenon_c_length',
+            'tenon_c_interval',
+
+            'tenon_d_width',
+            'tenon_d_thickness',
+            'tenon_d_length',
+            'tenon_d_interval',
+
             'corner_radius',
             'left_distance',
-            'cottom_distance',
+            'bottom_distance',
             'cutting_depth_perlayer',
             'lightness',
             'equipment_id'
