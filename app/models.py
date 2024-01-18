@@ -86,7 +86,8 @@ class PaginatedAPIMixin(object):
         return data
 
 
-class Users(PaginatedAPIMixin, Serializer, db.Model):
+class User(PaginatedAPIMixin, Serializer, db.Model):
+    __tablename__ = 'users'
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
@@ -107,9 +108,9 @@ class Users(PaginatedAPIMixin, Serializer, db.Model):
 
     notifications = db.relationship('Notification', backref='user',
                                     lazy='dynamic', cascade='all, delete-orphan')
-    
-    actions = db.relationship('Actions', backref='user', lazy='dynamic')
-    jobs = db.relationship('Jobs', backref='user', lazy='dynamic')
+
+    actions = db.relationship('Action', backref='user', lazy='dynamic')
+    jobs = db.relationship('Job', backref='user', lazy='dynamic')
 
     def __repr__(self):
         return '<User {}>'.format(self.username)
@@ -225,7 +226,7 @@ class Users(PaginatedAPIMixin, Serializer, db.Model):
             print(e)
             return None
 
-        return Users.query.get(payload.get('id'))
+        return User.query.get(payload.get('id'))
 
     def add_notification(self, name, data):
         '''给用户实例对象增加通知'''
@@ -237,7 +238,8 @@ class Users(PaginatedAPIMixin, Serializer, db.Model):
         return n
 
 
-class Roles(db.Model):
+class Role(db.Model):
+    __tablename__ = 'roles'
     __table_args__ = {'sqlite_autoincrement': True}
 
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
@@ -247,7 +249,7 @@ class Roles(db.Model):
     last_update = db.Column(
         db.DateTime(), onupdate=datetime.utcnow, default=datetime.utcnow)
 
-    users = db.relationship('Users', secondary=users_roles,
+    users = db.relationship('User', secondary=users_roles,
                             backref=db.backref('roles'))
 
     def __repr__(self):
@@ -294,7 +296,10 @@ class Notification(db.Model):
                 setattr(self, field, data[field])
 
 
-class Equipments(db.Model, PaginatedAPIMixin, Serializer):
+class Equipment(db.Model, PaginatedAPIMixin, Serializer):
+    __tablename__ = 'equipments'
+    __table_args__ = {'sqlite_autoincrement': True}
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     node_name = db.Column(db.String(50))
     equipment_code = db.Column(db.String(50))
@@ -308,13 +313,13 @@ class Equipments(db.Model, PaginatedAPIMixin, Serializer):
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     city_id = db.Column(db.Integer, db.ForeignKey('cities.id'))
-    type_id = db.Column(db.Integer, db.ForeignKey('types.id')) 
+    type_id = db.Column(db.Integer, db.ForeignKey('equipment_type.id'))
 
     users = db.relationship(
-        'Users', secondary=users_equipments, backref=db.backref('equipments'))
-    jobs = db.relationship('Jobs', backref='equipment', lazy='dynamic')
-    actions = db.relationship('Actions', backref='equipment', lazy='dynamic')
-    poweronoffs = db.relationship('Poweronoffs', backref='equipment', lazy='dynamic')
+        'User', secondary=users_equipments, backref=db.backref('equipments'))
+    jobs = db.relationship('Job', backref='equipment', lazy='dynamic')
+    poweronoffs = db.relationship(
+        'Poweronoff', backref='equipment', lazy='dynamic')
 
     @classmethod
     def dinamic_filter(model_class, filter_condition):
@@ -350,19 +355,19 @@ class Equipments(db.Model, PaginatedAPIMixin, Serializer):
     def get_last_job(self):
         jobs = [j.to_dict() for j in self.jobs]
         return jobs[-1] if jobs else None
-    
+
     def calculate_online_time(self):
         if self.is_online == '1':
             time_difference = datetime.utcnow() - self.online_at
         else:
             time_difference = timedelta(0)
-        
+
         days = time_difference.days
         seconds = time_difference.seconds
 
         hours = seconds // 3600
         minutes = (seconds % 3600) // 60
-        remaining_seconds = seconds % 60
+        # remaining_seconds = seconds % 60
         return (f"{days} 天, {hours} 小时,{minutes} 分钟")
 
     def to_dict(self):
@@ -384,7 +389,7 @@ class Equipments(db.Model, PaginatedAPIMixin, Serializer):
             'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
         }
         return data
-    
+
     def to_dict_simple(self):
         data = {
             'id': self.id,
@@ -406,39 +411,48 @@ class Equipments(db.Model, PaginatedAPIMixin, Serializer):
                 setattr(self, field, data[field])
 
 
-class Types(db.Model):
+class EquipmentType(db.Model):
+    __tablename__ = 'equipment_type'
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    equipments = db.relationship('Equipments', backref='type', lazy='dynamic')
+    equipments = db.relationship('Equipment', backref='type', lazy='dynamic')
 
 
-class Cities(db.Model):
+class City(db.Model):
+    __tablename__ = 'cities'
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    equipments = db.relationship('Equipments', backref='city', lazy='dynamic')
+    equipments = db.relationship('Equipment', backref='city', lazy='dynamic')
 
 
-class Poweronoffs(db.Model):
+class Poweronoff(db.Model):
+    __tablename__ = 'poweronoffs'
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
-    equipment_id = db.Column(db.Integer, db.ForeignKey('equipments.id')) 
+    equipment_id = db.Column(db.Integer, db.ForeignKey('equipments.id'))
 
 
-class Jobs(db.Model, PaginatedAPIMixin, Serializer):
+class Job(db.Model, PaginatedAPIMixin, Serializer):
+    __tablename__ = 'jobs'
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     start_time = db.Column(db.DateTime, default=datetime.utcnow)
     end_time = db.Column(db.DateTime)
     is_tested = db.Column(db.Integer, default=0)    # 0: initial, 1: tested
-    status = db.Column(db.Integer, default=0)       # 0: initial, 1: running 2, ended
+    # 0: initial, 1: running 2, ended
+    status = db.Column(db.Integer, default=0)
     stage = db.Column(db.Integer, default=0)        # total 10 stages
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
@@ -500,48 +514,69 @@ class Jobs(db.Model, PaginatedAPIMixin, Serializer):
                 setattr(self, field, data[field])
 
 
-class Actions(db.Model, PaginatedAPIMixin, Serializer):
+class ActionType(db.Model):
+    __tablename__ = 'action_type'
+
+    id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
+    name = db.Column(db.String(50))
+    action_code = db.Column(db.String(50))           # A1 A2 B1 B2 C1 C2
+    is_mortise = db.Column(db.Integer(), default=0)  # 0 tenon, 1 mortise
+    assembly_type = db.Column(db.String(1), default='0')  # 0 单排， 1 双排， 2 复合
+
+    actions = db.relationship('Action', backref='action_type', lazy='dynamic')
+
+
+class Action(db.Model, PaginatedAPIMixin, Serializer):
+    __tablename__ = 'actions'
+
     id = db.Column(db.Integer(), primary_key=True, autoincrement=True)
     name = db.Column(db.String(50))
 
-    straight_knife_diameter = db.Column(db.Integer(), default=0)
-    total_width = db.Column(db.Integer(), default=0)
-    total_thickness = db.Column(db.Integer(), default=0)
-    total_length = db.Column(db.Integer(), default=200)
-    is_double_row = db.Column(db.String(1), default='0')
+    knife_diameter = db.Column(db.Integer())
+    knife_angle = db.Column(db.Integer())
+    base_width = db.Column(db.Integer())
+    base_thickness = db.Column(db.Integer())
+    base_length = db.Column(db.Integer())
 
-    tenon_a_width = db.Column(db.Integer(), default=0)
-    tenon_a_thickness = db.Column(db.Integer(), default=0)
-    tenon_a_length = db.Column(db.Integer(), default=0)
+    tenon_a_width = db.Column(db.Integer())
+    tenon_a_thickness = db.Column(db.Integer())
+    tenon_a_length = db.Column(db.Integer())
+    tenon_a_left = db.Column(db.Integer())
+    tenon_a_right = db.Column(db.Integer())
+    tenon_a_bottom = db.Column(db.Integer())
+    tenon_a_interval = db.Column(db.Integer())
+    number_of_tenons_a = db.Column(db.Integer())
 
-    tenon_b_width = db.Column(db.Integer(), default=0)
-    tenon_b_thickness = db.Column(db.Integer(), default=0)
-    tenon_b_length = db.Column(db.Integer(), default=0)
-    tenon_b_interval = db.Column(db.Integer(), default=0)
+    tenon_b_width = db.Column(db.Integer())
+    tenon_b_thickness = db.Column(db.Integer())
+    tenon_b_length = db.Column(db.Integer())
+    tenon_b_left = db.Column(db.Integer())
+    tenon_b_bottom = db.Column(db.Integer())
 
-    tenon_c_width = db.Column(db.Integer(), default=0)
-    tenon_c_thickness = db.Column(db.Integer(), default=0)
-    tenon_c_length = db.Column(db.Integer(), default=0)
-    tenon_c_interval = db.Column(db.Integer(), default=0)
+    tenon_c_width = db.Column(db.Integer())
+    tenon_c_thickness = db.Column(db.Integer())
+    tenon_c_length = db.Column(db.Integer())
+    tenon_c_left = db.Column(db.Integer())
+    tenon_c_bottom = db.Column(db.Integer())
 
-    tenon_d_width = db.Column(db.Integer(), default=0)
-    tenon_d_thickness = db.Column(db.Integer(), default=0)
-    tenon_d_length = db.Column(db.Integer(), default=0)
-    tenon_d_interval = db.Column(db.Integer(), default=0)
+    tenon_d_width = db.Column(db.Integer())
+    tenon_d_thickness = db.Column(db.Integer())
+    tenon_d_length = db.Column(db.Integer())
+    tenon_d_left = db.Column(db.Integer())
+    tenon_d_bottom = db.Column(db.Integer())
 
-    corner_radius = db.Column(db.Integer(), default=0)
-    left_distance = db.Column(db.Integer(), default=0)
-    bottom_distance = db.Column(db.Integer(), default=0)
-    cutting_depth_perlayer = db.Column(db.Integer(), default=0)
-    lightness = db.Column(db.Integer(), default=0)
+    corner_radius = db.Column(db.Integer())
+    left_distance = db.Column(db.Integer())
+    bottom_distance = db.Column(db.Integer())
+    cutting_depth_perlayer = db.Column(db.Integer())
+    lightness = db.Column(db.Integer())
     create_at = db.Column(db.DateTime, nullable=False, default=datetime.utcnow)
     last_update = db.Column(db.DateTime, onupdate=datetime.utcnow)
 
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    equipment_id = db.Column(db.Integer, db.ForeignKey('equipments.id'))
+    type_id = db.Column(db.Integer, db.ForeignKey('action_type.id'))
 
-    jobs = db.relationship('Jobs', backref='action', lazy='dynamic')
-    
+    jobs = db.relationship('Job', backref='action', lazy='dynamic')
 
     @classmethod
     def dinamic_filter(model_class, filter_condition):
@@ -578,78 +613,98 @@ class Actions(db.Model, PaginatedAPIMixin, Serializer):
         data = {
             'id': self.id,
             'name': self.name,
-            'straight_knife_diameter': self.straight_knife_diameter,
-            'total_width': self.total_width,
-            'total_thickness': self.total_thickness,
-            'total_length': self.total_length,
-            'is_double_row': self.is_double_row,
+            'knife_diameter': self.knife_diameter,
+            'knife_angle': self.knife_angle,
+            'base_width': self.base_width,
+            'base_thickness': self.base_thickness,
+            'base_length': self.base_length,
 
             'tenon_a_width': self.tenon_a_width,
             'tenon_a_thickness': self.tenon_a_thickness,
             'tenon_a_length': self.tenon_a_length,
+            'tenon_a_left': self.tenon_a_left,
+            'tenon_a_right': self.tenon_a_right,
+            'tenon_a_bottom': self.tenon_a_bottom,
+            'tenon_a_interval': self.tenon_a_interval,
+            'number_of_tenons_a': self.number_of_tenons_a,
 
             'tenon_b_width': self.tenon_b_width,
             'tenon_b_thickness': self.tenon_b_thickness,
             'tenon_b_length': self.tenon_b_length,
-            'tenon_b_interval': self.tenon_b_interval,
+            'tenon_b_left': self.tenon_b_left,
+            'tenon_b_bottom': self.tenon_b_bottom,
 
             'tenon_c_width': self.tenon_c_width,
             'tenon_c_thickness': self.tenon_c_thickness,
             'tenon_c_length': self.tenon_c_length,
-            'tenon_c_interval': self.tenon_c_interval,
+            'tenon_c_left': self.tenon_c_left,
+            'tenon_c_bottom': self.tenon_c_bottom,
 
             'tenon_d_width': self.tenon_d_width,
             'tenon_d_thickness': self.tenon_d_thickness,
             'tenon_d_length': self.tenon_d_length,
-            'tenon_d_interval': self.tenon_d_interval,
+            'tenon_d_left': self.tenon_d_left,
+            'tenon_d_bottom': self.tenon_d_bottom,
 
             'corner_radius': self.corner_radius,
-            'left_distance': self.left_distance,
-            'bottom_distance': self.bottom_distance,
+            # 'left_distance': self.left_distance,
+            # 'bottom_distance': self.bottom_distance,
             'cutting_depth_perlayer': self.cutting_depth_perlayer,
             'lightness': self.lightness,
-            
+
             'create_at': self.create_at.isoformat() + 'Z',
             'last_update': self.last_update.isoformat() + 'Z' if self.last_update else None,
             'user_id': self.user_id,
-            'equipment_id': self.equipment_id,
-            'equipment': self.equipment.name if self.equipment_id else None,
-            'equipment_code': self.equipment.equipment_code if self.equipment_id else None,
-            'gcodefile': self.last_update.strftime("%Y%m%d_%H%M%S") + '.nc' if self.last_update else self.create_at.strftime("%Y%m%d_%H%M%S") + '.nc' 
+
+            'type_id': self.type_id,
+            'action_type': self.action_type.name if self.type_id else None,
+            'action_code': self.action_type.action_code if self.type_id else None,
+            'assembly_type': self.action_type.assembly_type if self.type_id else '0',
+            'is_mortise': self.action_type.is_mortise if self.type_id else 0,
+
+            'gcodefile': self.last_update.strftime("%Y%m%d_%H%M%S") + '.nc' if self.last_update else self.create_at.strftime("%Y%m%d_%H%M%S") + '.nc'
         }
         return data
 
     def from_dict(self, data):
         for field in [
             'name',
-            'straight_knife_diameter',
-            'total_width',
-            'total_thickness',
-            'total_length',
-            'is_double_row',
+            'knife_diameter',
+            'knife_angle',
+            'base_width',
+            'base_thickness',
+            'base_length',
+            'assembly_type',
+            'is_mortise',
 
             'tenon_a_width',
             'tenon_a_thickness',
             'tenon_a_length',
+            'tenon_a_left',
+            'tenon_a_right',
+            'tenon_a_bottom',
+            'tenon_a_interval',
+            'number_of_tenons_a',
 
             'tenon_b_width',
             'tenon_b_thickness',
             'tenon_b_length',
-            'tenon_b_interval',
+            'tenon_b_left',
+            'tenon_b_bottom',
 
             'tenon_c_width',
             'tenon_c_thickness',
             'tenon_c_length',
-            'tenon_c_interval',
+            'tenon_c_left',
+            'tenon_c_bottom',
 
             'tenon_d_width',
             'tenon_d_thickness',
             'tenon_d_length',
-            'tenon_d_interval',
+            'tenon_d_left',
+            'tenon_d_bottom',
 
             'corner_radius',
-            'left_distance',
-            'bottom_distance',
             'cutting_depth_perlayer',
             'lightness',
             'equipment_id'

@@ -4,7 +4,7 @@ from app import db
 from app.api import bp
 from app.api.auth import token_auth
 from app.api.errors import bad_request, error_response
-from app.models import Users
+from app.models import User
 # from flask_babel import gettext as _
 
 @bp.route('/users', methods=['POST'])
@@ -23,14 +23,14 @@ def create_user():
     if 'password' not in data or not data.get('password', None):
         message['password'] = _('Please provide a valid password.')
 
-    if Users.query.filter_by(username=data.get('username', None)).first():
+    if User.query.filter_by(username=data.get('username', None)).first():
         message['username'] = 'Please use a different username.'
-    if Users.query.filter_by(email=data.get('email', None)).first():
+    if User.query.filter_by(email=data.get('email', None)).first():
         message['email'] = _('Please use a different email address.')
     if message:
         return bad_request(message)
 
-    user = Users()
+    user = User()
     user.from_dict(data, new_user=True)
     db.session.add(user)
     db.session.commit()
@@ -50,29 +50,29 @@ def get_users():
     get_name = 'name' in request.args and request.args.get('name') != ''  
 
     conditions = []
-    usersIdList = []
+    userIdList = []
 
     if get_name:
         name = request.args.get('name')
         search_name = "%{}%".format(name)
 
-        usersFromUsername = Users.query.filter(Users.username.like(search_name))
-        usersFromName = Users.query.filter(Users.name.like(search_name))
-        usersFromNickname = Users.query.filter(Users.nickname.like(search_name))
+        userFromUsername = User.query.filter(User.username.like(search_name))
+        userFromName = User.query.filter(User.name.like(search_name))
+        userFromNickname = User.query.filter(User.nickname.like(search_name))
 
-        for u in usersFromUsername:
-            usersIdList.append(u.id)
+        for u in userFromUsername:
+            userIdList.append(u.id)
 
-        for u in usersFromName:
-            usersIdList.append(u.id)
+        for u in userFromName:
+            userIdList.append(u.id)
 
-        for u in usersFromNickname:
-            usersIdList.append(u.id)
+        for u in userFromNickname:
+            userIdList.append(u.id)
 
-        conditions.append(('id', 'in', usersIdList))
+        conditions.append(('id', 'in', userIdList))
 
-    query = Users.dinamic_filter(conditions).order_by(Users.login_counts.desc())
-    data = Users.to_collection_dict(query, page, per_page)
+    query = User.dinamic_filter(conditions).order_by(User.login_counts.desc())
+    data = User.to_collection_dict(query, page, per_page)
     return jsonify(data)
 
 
@@ -81,19 +81,19 @@ def get_users():
 # @token_auth.login_required
 def get_user(id):
     '''返回一个用户'''
-    user = Users.query.get_or_404(id)
+    user = User.query.get_or_404(id)
 
-    print(jsonify(Users.query.get_or_404(id).to_dict()))
+    print(jsonify(User.query.get_or_404(id).to_dict()))
     if g.current_user == user:
-        return jsonify(Users.query.get_or_404(id).to_dict(include_email=True))
-    return jsonify(Users.query.get_or_404(id).to_dict())
+        return jsonify(User.query.get_or_404(id).to_dict(include_email=True))
+    return jsonify(User.query.get_or_404(id).to_dict())
 
 
 @bp.route('/users/<int:id>', methods=['DELETE'])
 # @token_auth.login_required
 def delete_user(id):
     '''返回一条图书记录'''
-    user = Users.query.get_or_404(id)
+    user = User.query.get_or_404(id)
     db.session.delete(user)
     db.session.commit()
     response = jsonify({'info': 'users deleted by id:' + str(id) })
@@ -115,7 +115,7 @@ def get_role():
 @token_auth.login_required
 def get_myproject(id):
     '''返回一个用户'''
-    user = Users.query.get_or_404(id)
+    user = User.query.get_or_404(id)
     
     project_list = []
     for record in user.records:
@@ -140,7 +140,7 @@ def get_myproject(id):
 @token_auth.login_required
 def update_user(id):
     '''修改一个用户'''
-    user = Users.query.get_or_404(id)
+    user = User.query.get_or_404(id)
     data = request.get_json()
     if not data:
         return bad_request(_('You must post JSON data.'))
@@ -154,11 +154,11 @@ def update_user(id):
         message['email'] = 'Please provide a valid email address.'
 
     if 'username' in data and data['username'] != user.username and \
-            Users.query.filter_by(username=data['username']).first():
+            User.query.filter_by(username=data['username']).first():
         message['username'] = 'Please use a different username.'
 
     if 'email' in data and data['email'] != user.email and \
-            Users.query.filter_by(email=data['email']).first():
+            User.query.filter_by(email=data['email']).first():
         message['email'] = 'Please use a different email address.'
 
     if message:
@@ -175,7 +175,7 @@ def update_user(id):
 @token_auth.login_required
 def get_user_notifications(id):
     '''返回该用户的新通知'''
-    user = Users.query.get_or_404(id)
+    user = User.query.get_or_404(id)
     if g.current_user != user:
         return error_response(403)
     # 只返回上次看到的通知以来发生的新通知

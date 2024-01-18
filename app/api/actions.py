@@ -1,37 +1,52 @@
 import re
-from flask import request, jsonify, url_for, g
+import json
+from flask import request, jsonify, g
 from app import db
 from app.api import bp
 from app.api.auth import token_auth
 from app.api.errors import bad_request, error_response
-from app.models import Actions
+from app.models import Action, ActionType
 import uuid
 # from flask_babel import gettext as _
 
+
+def get_action_type(action_code):
+    return ActionType.query.filter(ActionType.action_code == action_code).first()
+
+
 @bp.route('/actions', methods=['POST'])
 @token_auth.login_required
-def create_or_update_action():
-    '''创建一个作业指令'''
+def create_action():
+    '''创建或克隆一个作业指令'''
     data = request.get_json()
-    print('create_or_update_action: ', data)
-    if not data['equipment_id']:
-        data['equipment_id'] = 1
+    print("data['action_code']: ", data['action_code'])
 
-    if not data['id']:
-        print('create a action')
-        # data['name'] = data['name'] + '-' + str(uuid.uuid4())[:8]
-        action = Actions()  
-        action.from_dict(data)
-        action.user_id = g.current_user.id
-        db.session.add(action)
+    print('data: ', json.dumps(data, indent=4))
+
+    length_columns = ['tenon_a_length', 'tenon_b_length',
+                      'tenon_c_length', 'tenon_d_length']
+
+    if data['is_clone_from_tenon']:
+        action_type = get_action_type(int(data['action_code']) + 1)
+        data['name'] = action_type.name + '-' + \
+            data['name'].split('-')[1] if action_type else None
+        data['cutting_depth_perlayer'] = data['cutting_depth_perlayer'] / 2
+        for lc in length_columns:
+            if lc in data:
+                data[lc] = data[lc] + 1 if data[lc] else None
     else:
-        print('update a action')
-        action = Actions.query.get(data['id'])
-        action.from_dict(data)
+        action_type = get_action_type(data['action_code'])
+
+    action = Action()
+    action.from_dict(data)
+    action.type_id = action_type.id if action_type else None
+    action.user_id = g.current_user.id
+    db.session.add(action)
     db.session.commit()
-    
-    print('action.to_dict(): ', action.to_dict())
-    
+
+    print('--- response data in create_action: ',
+          json.dumps(action.to_dict(), indent=4))
+
     return jsonify({'data': action.to_dict()})
 
 
@@ -43,10 +58,9 @@ def get_actions():
     per_page = min(request.args.get('per_page', 100, type=int), 100)
     conditions = []
     conditions.append(('user_id', 'eq', g.current_user.id))
-    query = Actions.dinamic_filter(conditions).order_by(Actions.create_at.desc())
-    data = Actions.to_collection_dict(query, page, per_page)
+    query = Action.dinamic_filter(conditions).order_by(Action.create_at.desc())
+    data = Action.to_collection_dict(query, page, per_page)
     return jsonify(data)
-
 
 
 @bp.route('/actions/<int:id>', methods=['PUT'])
@@ -54,32 +68,26 @@ def get_actions():
 def get_action(id):
     '''更新一个作业指令'''
     data = request.get_json()
-    print(type(data), data)
-    action = Actions.query.get_or_404(id)
+    print('- request data in update_action: ', json.dumps(data, indent=4))
+
+    action = Action.query.get_or_404(id)
     action.from_dict(data)
     db.session.commit()
+    print('- response data in update_action: : ', json.dumps(action.to_dict(), indent=4))
 
-    return jsonify(action.to_dict())
+    return jsonify({'data': action.to_dict()})
 
 
 @bp.route('/actions/<int:id>', methods=['DELETE'])
 @token_auth.login_required
 def delete_action(id):
     '''删除作业指令'''
-    action = Actions.query.get_or_404(id)
+    action = Action.query.get_or_404(id)
     db.session.delete(action)
     db.session.commit()
-    response = jsonify({'info': 'action deleted by id:' + str(id) })
+    response = jsonify({'info': 'action deleted by id:' + str(id)})
     response.status_code = 200
     return response
-
-
-
-
-
-
-
-
 
 
 # @bp.route('/equipments/<int:id>', methods=['PUT', 'POST'])
@@ -114,4 +122,3 @@ def delete_action(id):
 #     user.status = 1
 #     db.session.commit()
 #     return jsonify(user.to_dict())
-

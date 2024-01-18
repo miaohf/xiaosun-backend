@@ -3,21 +3,21 @@ app=create_app()
 app.app_context().push()
 from sqlalchemy import func
 
-from app.models import Roles, Users, Equipments, Actions, Cities, Types
+from app.models import Role, User, Equipment, Action, City, EquipmentType, ActionType
 import math
 from datetime import datetime
 
 
 cities = ['溧阳', '上海', '苏州', '杭州']
-types = ['平刨', '压刨', '带锯', '台锯', '多功能工作台']
+equipment_type_items = ['平刨', '压刨', '带锯', '台锯', '多功能工作台']
 
 for c in cities:
-    city = Cities(name=c)
+    city = City(name=c)
     db.session.add(city)
 db.session.commit()
 
-for t in types:
-    type = Types(name=t)
+for n in equipment_type_items:
+    type = EquipmentType(name=n)
     db.session.add(type)
 db.session.commit()
 
@@ -43,11 +43,7 @@ equipments = [
     ['溧阳二厂','V6T20220901','hfgd01349936', '设备h006', 0, 2, 2, 0],
 ]
 
-
-
-
-
-actions = [
+[
     # ['制作-格角榫', 1, 1, 1, 20, 10, 60, 10, 5, 120, 2, 1, 3],
     # ['制作-托角榫', 2, 1, 1, 20, 10, 60, 10, 5, 120, 2, 1, 3],
     # ['制作-粽角榫', 3, 1, 1, 20, 10, 60, 10, 5, 120, 2, 1, 3],
@@ -64,8 +60,9 @@ actions = [
     # ['制作-札榫', 16, 1, 1, 20, 10, 60, 10, 5, 120, 2, 1, 3],
 ]
 
+
 for ep in equipments:
-    equipment = Equipments(
+    equipment = Equipment(
         node_name=ep[0],
         version=ep[1],
         equipment_code=ep[2],
@@ -80,52 +77,57 @@ for ep in equipments:
 db.session.commit()
 
 
-for action in actions:
-    action = Actions(
-        name = action[0],
-        straight_knife_diameter = action[1],
-        total_width = action[2],
-        total_thickness = action[3],
-        tenon_width = action[4],
-        tenon_thickness = action[5],
-        tenon_length = action[6],
-        corner_radius = action[7],
-        left_distance = action[8],
-        cottom_distance = action[9],
-        cutting_depth_perlayer = action[10],
-        lightness = action[11],
-        user_id = action[12],
+# assembly_type: 0 单排， 1 双排， 2 复合
+action_type_items = [
+    ['榫头','1001', 0, 0],
+    ['榫眼','1002', 1, 0],
+    ['单排榫头','2001', 0, 0],
+    ['单排榫眼','2002', 1, 0],
+    ['竖排榫头','3001', 0, 1],
+    ['竖排榫眼','3002', 1, 1],
+    ['四榫头','4001', 0, 1],
+    ['四榫眼','4002', 1, 1],
+    ['复合榫头','5001', 0, 2],
+    ['复合榫眼','5002', 1, 2],
+    ['燕尾拼公隼','6001', 0, 0],
+    ['燕尾拼母隼','6002', 1, 0],
+    ['直拼公隼','7001', 0, 0],
+    ['直拼母隼','7002', 1, 0]
+]
+
+for ati in action_type_items:
+    actiontype = ActionType(
+        name = ati[0],
+        action_code = ati[1],
+        is_mortise = ati[2],
+        assembly_type = ati[3]
         )
-    db.session.add(action)
+    db.session.add(actiontype)
 
 db.session.commit()
 
-r1=Roles(name='admin', authority='administrator')
+r1=Role(name='admin', authority='administrator')
 db.session.add(r1)
 
 
-
-
 # admin
-
-
-u2=Users(username='admin', fullname='管理员', mail='admin@xiaosun.co', company = '小隼制造')
+u2=User(username='admin', fullname='管理员', mail='admin@xiaosun.co', company = '小隼制造')
 u2.set_password('12345678')
 r1.users.append(u2)
 
-u2=Users(username='zhangzy', fullname='章正一', mail='zhangzy@xiaosun.co', company = '小隼制造')
+u2=User(username='zhangzy', fullname='章正一', mail='zhangzy@xiaosun.co', company = '小隼制造')
 u2.set_password('12345678')
 r1.users.append(u2)
 
-u3=Users(username='ranwy', fullname='冉维尧', mail='ranwy@xiaosun.co', company = '小隼制造')
+u3=User(username='ranwy', fullname='冉维尧', mail='ranwy@xiaosun.co', company = '小隼制造')
 u3.set_password('12345678')
 r1.users.append(u3)
 
-u1=Users(username='miaohf', fullname='缪海锋', mail='miaohf@xiaosun.co', company = '小隼制造')
+u1=User(username='miaohf', fullname='缪海锋', mail='miaohf@xiaosun.co', company = '小隼制造')
 u1.set_password('12345678')
 r1.users.append(u1)
 
-u4=Users(username='zhangsan', fullname='张三', mail='zhangsan@xiaosun.co', company = '小隼制造', status=0)
+u4=User(username='zhangsan', fullname='张三', mail='zhangsan@xiaosun.co', company = '小隼制造', status=0)
 u4.set_password('12345678')
 r1.users.append(u4)
 
@@ -134,8 +136,8 @@ db.session.commit()
 
 
 
-equipments = Equipments.query.all()
-users = Users.query.all()
+equipments = Equipment.query.all()
+users = User.query.all()
 
 for u in users:
     for em in equipments:

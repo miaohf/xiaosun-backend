@@ -36,4 +36,4 @@ def handle_teardown_request(ex):
 
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run()

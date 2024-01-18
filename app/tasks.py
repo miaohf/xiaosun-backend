@@ -1,7 +1,7 @@
 """Example of adding tasks on app startup."""
 
 from .extensions import scheduler
-from .models import Jobs
+from .models import Job
 from app import db
 from datetime import datetime
 
@@ -24,7 +24,7 @@ def task1():
     with scheduler.app.app_context():
         now = datetime.now()
         # print(scheduler.app.config)  # noqa: T001
-        jobs = Jobs.query.filter(Jobs.status == 1).filter(Jobs.stage < 100).all()
+        jobs = Job.query.filter(Job.status == 1).filter(Job.stage < 100).all()
         for job in jobs:
             if job.stage == 1 and job.stage == 0:
                 job.equipment.status = 1

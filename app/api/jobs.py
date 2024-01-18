@@ -4,7 +4,7 @@ from app import db
 from app.api import bp
 from app.api.auth import token_auth
 from app.api.errors import bad_request, error_response
-from app.models import Jobs, Equipments
+from app.models import Job
 # from flask_babel import gettext as _
 
 
@@ -14,7 +14,7 @@ def create_job():
     '''创建一个任务'''
     data = request.get_json()
     print('data: ', data)
-    job = Jobs()
+    job = Job()
     job.from_dict(data)
     job.user_id = g.current_user.id
     db.session.add(job)
@@ -32,8 +32,8 @@ def get_jobs():
     conditions = []
     conditions.append(('user_id', 'eq', g.current_user.id))
 
-    query = Jobs.dinamic_filter(conditions).order_by(Jobs.create_at.desc())
-    data = Jobs.to_collection_dict(query, page, per_page)
+    query = Job.dinamic_filter(conditions).order_by(Job.create_at.desc())
+    data = Job.to_collection_dict(query, page, per_page)
     return jsonify(data)
 
 
@@ -61,7 +61,7 @@ def get_options():
 @token_auth.login_required
 def delete_job(id):
     '''删除指令'''
-    job = Jobs.query.get_or_404(id)
+    job = Job.query.get_or_404(id)
     db.session.delete(job)
     db.session.commit()
     response = jsonify({'info': 'jobs deleted by id:' + str(id) })
@@ -73,7 +73,7 @@ def delete_job(id):
 @token_auth.login_required
 def update_job(id):
     '''更新一个指令'''
-    job = Jobs.query.get_or_404(id)
+    job = Job.query.get_or_404(id)
     data = request.get_json()
     print('data: ', data)
     job.from_dict(data)

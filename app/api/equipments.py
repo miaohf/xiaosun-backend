@@ -4,7 +4,7 @@ from app import db
 from app.api import bp
 from app.api.auth import token_auth
 from app.api.errors import bad_request, error_response
-from app.models import Equipments
+from app.models import Equipment
 # from flask_babel import gettext as _
 
 # @bp.route('/equipments', methods=['POST'])
@@ -24,8 +24,8 @@ def get_equipments():
     equipment_id_list = [em.id for em in g.current_user.equipments] 
     conditions = []
     conditions.append(('id', 'in', equipment_id_list))
-    query = Equipments.dinamic_filter(conditions).order_by(Equipments.last_update.desc())
-    data = Equipments.to_collection_dict(query, page, per_page)
+    query = Equipment.dinamic_filter(conditions).order_by(Equipment.last_update.desc())
+    data = Equipment.to_collection_dict(query, page, per_page)
     return jsonify(data)
 
 
@@ -34,7 +34,7 @@ def get_equipments():
 # @token_auth.login_required
 def get_equipment(id):
     '''返回一个设备'''
-    equipment = Equipments.query.get_or_404(id)
+    equipment = Equipment.query.get_or_404(id)
 
     return jsonify(equipment.to_dict())
 
