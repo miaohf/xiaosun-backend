@@ -533,19 +533,22 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
     name = db.Column(db.String(50))
 
     knife_diameter = db.Column(db.Integer())
-    knife_angle = db.Column(db.Integer())
+    knife_b_diameter = db.Column(db.Integer())
+    knife_b_angle = db.Column(db.Integer())
     base_width = db.Column(db.Integer())
     base_thickness = db.Column(db.Integer())
     base_length = db.Column(db.Integer())
+
+    tenon_interval = db.Column(db.Integer())
+    alignment = db.Column(db.String(1))     # 0: 居中, 1: 1/2燕尾宽,  2: 自定义
+    left_margin = db.Column(db.Integer())
+    right_margin = db.Column(db.Integer())
 
     tenon_a_width = db.Column(db.Integer())
     tenon_a_thickness = db.Column(db.Integer())
     tenon_a_length = db.Column(db.Integer())
     tenon_a_left = db.Column(db.Integer())
-    tenon_a_right = db.Column(db.Integer())
     tenon_a_bottom = db.Column(db.Integer())
-    tenon_a_interval = db.Column(db.Integer())
-    number_of_tenons_a = db.Column(db.Integer())
 
     tenon_b_width = db.Column(db.Integer())
     tenon_b_thickness = db.Column(db.Integer())
@@ -614,19 +617,23 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
             'id': self.id,
             'name': self.name,
             'knife_diameter': self.knife_diameter,
-            'knife_angle': self.knife_angle,
+            'knife_b_diameter': self.knife_b_diameter,
+            'knife_b_angle': self.knife_b_angle,
+
             'base_width': self.base_width,
             'base_thickness': self.base_thickness,
             'base_length': self.base_length,
+
+            'tenon_interval': self.tenon_interval,
+            'alignment': self.alignment,
+            'left_margin': self.left_margin,
+            'right_margin': self.right_margin,
 
             'tenon_a_width': self.tenon_a_width,
             'tenon_a_thickness': self.tenon_a_thickness,
             'tenon_a_length': self.tenon_a_length,
             'tenon_a_left': self.tenon_a_left,
-            'tenon_a_right': self.tenon_a_right,
             'tenon_a_bottom': self.tenon_a_bottom,
-            'tenon_a_interval': self.tenon_a_interval,
-            'number_of_tenons_a': self.number_of_tenons_a,
 
             'tenon_b_width': self.tenon_b_width,
             'tenon_b_thickness': self.tenon_b_thickness,
@@ -670,21 +677,23 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
         for field in [
             'name',
             'knife_diameter',
-            'knife_angle',
+            'knife_b_diameter',
+            'knife_b_angle',
+
             'base_width',
             'base_thickness',
             'base_length',
-            'assembly_type',
-            'is_mortise',
+
+            'tenon_interval',
+            'left_margin',
+            'right_margin',
+            'alignment',
 
             'tenon_a_width',
             'tenon_a_thickness',
             'tenon_a_length',
             'tenon_a_left',
-            'tenon_a_right',
             'tenon_a_bottom',
-            'tenon_a_interval',
-            'number_of_tenons_a',
 
             'tenon_b_width',
             'tenon_b_thickness',
