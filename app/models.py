@@ -549,6 +549,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
     tenon_a_length = db.Column(db.Integer())
     tenon_a_left = db.Column(db.Integer())
     tenon_a_bottom = db.Column(db.Integer())
+    number_of_tenona = db.Column(db.Integer())
 
     tenon_b_width = db.Column(db.Integer())
     tenon_b_thickness = db.Column(db.Integer())
@@ -634,6 +635,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
             'tenon_a_length': self.tenon_a_length,
             'tenon_a_left': self.tenon_a_left,
             'tenon_a_bottom': self.tenon_a_bottom,
+            'number_of_tenona': self.number_of_tenona,
 
             'tenon_b_width': self.tenon_b_width,
             'tenon_b_thickness': self.tenon_b_thickness,
@@ -694,6 +696,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
             'tenon_a_length',
             'tenon_a_left',
             'tenon_a_bottom',
+            'number_of_tenona',
 
             'tenon_b_width',
             'tenon_b_thickness',
