@@ -539,6 +539,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
     base_thickness = db.Column(db.Integer())
     base_length = db.Column(db.Integer())
 
+    # is_tenon_b_needed = db.Column(db.Integer())
     tenon_interval = db.Column(db.Integer())
     alignment = db.Column(db.String(1))     # 0: 居中, 1: 1/2燕尾宽,  2: 自定义
     left_margin = db.Column(db.Integer())
@@ -625,6 +626,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
             'base_thickness': self.base_thickness,
             'base_length': self.base_length,
 
+            # 'is_tenon_b_needed': self.is_tenon_b_needed,
             'tenon_interval': self.tenon_interval,
             'alignment': self.alignment,
             'left_margin': self.left_margin,
@@ -686,6 +688,7 @@ class Action(db.Model, PaginatedAPIMixin, Serializer):
             'base_thickness',
             'base_length',
 
+            # 'is_tenon_b_needed',
             'tenon_interval',
             'left_margin',
             'right_margin',
